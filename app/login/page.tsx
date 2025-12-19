@@ -66,10 +66,10 @@ export default function LoginPage() {
 
                     <div>
                         <h1 className="text-5xl font-bold mb-4">
-                            Preserving Heritage Through Data Analysis
+                            Préserver le Patrimoine par l&apos;Analyse de Données
                         </h1>
                         <p className="text-xl text-gray-300 max-w-xl">
-                            Secure access to the national tourism surveillance dashboard. Monitor visitor flows, analyze trends, and protect Haiti&apos;s cultural assets.
+                            Accès sécurisé au tableau de bord national de surveillance touristique. Surveillez les flux de visiteurs, analysez les tendances et protégez le patrimoine culturel d&apos;Haïti.
                         </p>
 
                         {/* Progress Dots */}
@@ -92,10 +92,10 @@ export default function LoginPage() {
                 <div className="w-full max-w-md">
                     <div className="mb-8">
                         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                            Welcome Back
+                            Bienvenue
                         </h2>
                         <p className="text-gray-600 dark:text-gray-400">
-                            Please sign in to access the dashboard.
+                            Veuillez vous connecter pour accéder au tableau de bord.
                         </p>
                     </div>
 
@@ -109,7 +109,7 @@ export default function LoginPage() {
                         {/* Email Field */}
                         <div>
                             <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Email Address
+                                Adresse Email
                             </label>
                             <div className="relative">
                                 <input
@@ -138,7 +138,7 @@ export default function LoginPage() {
                         {/* Password Field */}
                         <div>
                             <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Password
+                                Mot de passe
                             </label>
                             <div className="relative">
                                 <input
@@ -169,14 +169,14 @@ export default function LoginPage() {
                                     onChange={(e) => setRememberMe(e.target.checked)}
                                     className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                                 />
-                                <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Remember me</span>
+                                <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Se souvenir de moi</span>
                             </label>
 
                             <button
                                 type="button"
                                 className="text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
                             >
-                                Forgot Password?
+                                Mot de passe oublié?
                             </button>
                         </div>
 
@@ -189,12 +189,12 @@ export default function LoginPage() {
                             {loading ? (
                                 <>
                                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                    Signing in...
+                                    Connexion en cours...
                                 </>
                             ) : (
                                 <>
                                     <LogIn className="w-5 h-5" />
-                                    Sign In
+                                    Se connecter
                                 </>
                             )}
                         </button>
@@ -203,9 +203,9 @@ export default function LoginPage() {
                     {/* Request Access */}
                     <div className="mt-8 text-center">
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                            Don&apos;t have an account?{' '}
+                            Vous n&apos;avez pas de compte?{' '}
                             <button className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
-                                Request Access
+                                Demander un accès
                             </button>
                         </p>
                     </div>
