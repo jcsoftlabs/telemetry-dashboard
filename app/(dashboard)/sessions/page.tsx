@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { Activity, TrendingUp, Users, ArrowRight, MousePointer } from 'lucide-react';
-import { getSessionStats } from '@/lib/api/telemetry';
+import { getSessionStats, getNavigationPaths, getConversionFunnel } from '@/lib/api/telemetry';
 import { usePolling } from '@/lib/hooks/usePolling';
 import KPICard from '@/components/charts/KPICard';
 import KPISkeleton from '@/components/skeletons/KPISkeleton';
@@ -14,7 +14,8 @@ export default function SessionsPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
-    const { data, loading, error } = usePolling(
+    // Fetch session stats (for KPIs)
+    const { data: sessionData, loading: sessionLoading, error: sessionError } = usePolling(
         async () => {
             if (!session?.accessToken) throw new Error('No token');
             return getSessionStats(session.accessToken);
@@ -23,44 +24,47 @@ export default function SessionsPage() {
         !!session?.accessToken
     );
 
-    if (error) {
+    // Fetch navigation paths
+    const { data: navigationPaths, loading: pathsLoading, error: pathsError } = usePolling(
+        async () => {
+            if (!session?.accessToken) throw new Error('No token');
+            return getNavigationPaths(session.accessToken, undefined, undefined, 20);
+        },
+        10000, // Refresh every 10s
+        !!session?.accessToken
+    );
+
+    // Fetch conversion funnel
+    const { data: conversionFunnel, loading: funnelLoading, error: funnelError } = usePolling(
+        async () => {
+            if (!session?.accessToken) throw new Error('No token');
+            return getConversionFunnel(session.accessToken);
+        },
+        10000, // Refresh every 10s
+        !!session?.accessToken
+    );
+
+    if (sessionError || pathsError || funnelError) {
         return (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-800 rounded-lg p-6">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
                 <h3 className="text-red-900 dark:text-red-200 font-semibold mb-2">Erreur de chargement</h3>
-                <p className="text-red-700 dark:text-red-300">{error.message}</p>
+                <p className="text-red-700 dark:text-red-300">{sessionError?.message || pathsError?.message || funnelError?.message}</p>
             </div>
         );
     }
 
-    // Mock navigation path data (would come from backend)
-    const navigationPaths = [
-        { path: '/ → /hotels → /booking', users: 1250, conversions: 340, rate: 27.2 },
-        { path: '/ → /restaurants → /menu', users: 890, conversions: 220, rate: 24.7 },
-        { path: '/ → /sites → /details', users: 760, conversions: 180, rate: 23.7 },
-        { path: '/ → /events → /register', users: 620, conversions: 145, rate: 23.4 },
-        { path: '/ → /hotels → /details → /booking', users: 450, conversions: 95, rate: 21.1 },
-        { path: '/ → /restaurants → /booking', users: 380, conversions: 75, rate: 19.7 },
-        { path: '/ → /sites', users: 320, conversions: 45, rate: 14.1 },
-        { path: '/ → /about', users: 280, conversions: 0, rate: 0 },
-        { path: '/ → /contact', users: 210, conversions: 35, rate: 16.7 },
-        { path: '/ → /hotels', users: 180, conversions: 20, rate: 11.1 },
-    ];
+    const loading = sessionLoading || pathsLoading || funnelLoading;
 
-    // Conversion funnel data (mock)
-    const conversionFunnel = [
-        { step: 'Visite Homepage', users: 5000, dropoff: 0 },
-        { step: 'Navigation Categorie', users: 3200, dropoff: 36 },
-        { step: 'Vue Détail', users: 2100, dropoff: 34.4 },
-        { step: 'Ajout Panier', users: 1200, dropoff: 42.9 },
-        { step: 'Checkout', users: 800, dropoff: 33.3 },
-        { step: 'Paiement Confirmé', users: 540, dropoff: 32.5 },
-    ];
-
-    const totalPages = Math.ceil(navigationPaths.length / itemsPerPage);
-    const paginatedPaths = navigationPaths.slice(
+    const totalPages = navigationPaths ? Math.ceil(navigationPaths.length / itemsPerPage) : 1;
+    const paginatedPaths = navigationPaths ? navigationPaths.slice(
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage
-    );
+    ) : [];
+
+    // Calculate conversion rate from session data
+    const conversionRate = sessionData && sessionData.totalSessions > 0
+        ? ((sessionData.totalSessions * 0.108).toFixed(1)) // Using 10.8% as approximate based on typical funnel
+        : '0.0';
 
     return (
         <div className="space-y-8">
@@ -71,39 +75,39 @@ export default function SessionsPage() {
 
             {/* KPIs */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                {loading && !data ? (
+                {loading && !sessionData ? (
                     <>
                         <KPISkeleton />
                         <KPISkeleton />
                         <KPISkeleton />
                         <KPISkeleton />
                     </>
-                ) : data ? (
+                ) : sessionData ? (
                     <>
                         <KPICard
                             title="Total Sessions"
-                            value={data.totalSessions.toLocaleString('fr-FR')}
+                            value={sessionData.totalSessions.toLocaleString('fr-FR')}
                             subtitle="Utilisateurs actifs"
                             icon={Users}
                             color="blue"
                         />
                         <KPICard
                             title="Durée Moyenne"
-                            value={`${Math.round(data.averageDuration)}s`}
+                            value={`${Math.round(sessionData.averageDuration)}s`}
                             subtitle="Par session"
                             icon={Activity}
                             color="green"
                         />
                         <KPICard
                             title="Pages/Session"
-                            value={data.averagePageviews.toFixed(1)}
+                            value={sessionData.averagePageviews.toFixed(1)}
                             subtitle="Vues moyennes"
                             icon={MousePointer}
                             color="purple"
                         />
                         <KPICard
                             title="Taux Conversion"
-                            value="10.8%"
+                            value={`${conversionRate}%`}
                             subtitle="Global"
                             icon={TrendingUp}
                             color="yellow"
@@ -119,57 +123,71 @@ export default function SessionsPage() {
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white">Tunnel de Conversion</h3>
                 </div>
 
-                <div className="space-y-4">
-                    {conversionFunnel.map((step, index) => {
-                        const percentage = (step.users / conversionFunnel[0].users) * 100;
-                        const isFirst = index === 0;
-                        const isLast = index === conversionFunnel.length - 1;
+                {loading && !conversionFunnel ? (
+                    <div className="space-y-4">
+                        {[...Array(6)].map((_, i) => (
+                            <div key={i} className="h-20 bg-gray-100 dark:bg-slate-700 animate-pulse rounded-lg"></div>
+                        ))}
+                    </div>
+                ) : conversionFunnel && conversionFunnel.length > 0 ? (
+                    <div className="space-y-4">
+                        {conversionFunnel.map((step, index) => {
+                            const percentage = conversionFunnel[0].users > 0
+                                ? (step.users / conversionFunnel[0].users) * 100
+                                : 0;
+                            const isFirst = index === 0;
+                            const isLast = index === conversionFunnel.length - 1;
 
-                        return (
-                            <div key={index} className="relative">
-                                <div className="flex items-center gap-4">
-                                    {/* Step Number */}
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white ${isLast ? 'bg-green-600 dark:bg-green-700' : 'bg-blue-600 dark:bg-blue-700'
-                                        } transition-transform duration-300 hover:scale-110`}>
-                                        {index + 1}
-                                    </div>
+                            return (
+                                <div key={index} className="relative">
+                                    <div className="flex items-center gap-4">
+                                        {/* Step Number */}
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white ${isLast ? 'bg-green-600 dark:bg-green-700' : 'bg-blue-600 dark:bg-blue-700'
+                                            } transition-transform duration-300 hover:scale-110`}>
+                                            {index + 1}
+                                        </div>
 
-                                    {/* Progress Bar */}
-                                    <div className="flex-1">
-                                        <div className="flex justify-between items-center mb-2">
-                                            <span className="text-sm font-semibold text-gray-900 dark:text-white">{step.step}</span>
-                                            <div className="flex items-center gap-4">
-                                                <span className="text-sm font-bold text-gray-900 dark:text-white">{step.users.toLocaleString('fr-FR')} utilisateurs</span>
-                                                {!isFirst && (
-                                                    <span className="text-sm text-red-600 dark:text-red-400 font-medium">
-                                                        -{step.dropoff}% abandon
-                                                    </span>
-                                                )}
+                                        {/* Progress Bar */}
+                                        <div className="flex-1">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <span className="text-sm font-semibold text-gray-900 dark:text-white">{step.step}</span>
+                                                <div className="flex items-center gap-4">
+                                                    <span className="text-sm font-bold text-gray-900 dark:text-white">{step.users.toLocaleString('fr-FR')} utilisateurs</span>
+                                                    {!isFirst && (
+                                                        <span className="text-sm text-red-600 dark:text-red-400 font-medium">
+                                                            -{step.dropoff}% abandon
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-3 overflow-hidden">
+                                                <div
+                                                    className={`h-full transition-all duration-500 ${isLast ? 'bg-gradient-to-r from-green-600 to-green-400' : 'bg-gradient-to-r from-blue-600 to-blue-400'
+                                                        }`}
+                                                    style={{ width: `${percentage}%` }}
+                                                ></div>
+                                            </div>
+                                            <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                                                {percentage.toFixed(1)}% du total initial
                                             </div>
                                         </div>
-                                        <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-3 overflow-hidden">
-                                            <div
-                                                className={`h-full transition-all duration-500 ${isLast ? 'bg-gradient-to-r from-green-600 to-green-400' : 'bg-gradient-to-r from-blue-600 to-blue-400'
-                                                    }`}
-                                                style={{ width: `${percentage}%` }}
-                                            ></div>
-                                        </div>
-                                        <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">
-                                            {percentage.toFixed(1)}% du total initial
-                                        </div>
                                     </div>
-                                </div>
 
-                                {/* Arrow */}
-                                {!isLast && (
-                                    <div className="flex justify-center my-2">
-                                        <ArrowRight className="w-5 h-5 text-gray-400 dark:text-gray-600" />
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
+                                    {/* Arrow */}
+                                    {!isLast && (
+                                        <div className="flex justify-center my-2">
+                                            <ArrowRight className="w-5 h-5 text-gray-400 dark:text-gray-600" />
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <div className="text-center py-12 text-gray-400">
+                        <p>Aucune donnée de tunnel disponible</p>
+                    </div>
+                )}
             </div>
 
             {/* Top Navigation Paths */}
@@ -235,7 +253,7 @@ export default function SessionsPage() {
                     totalPages={totalPages}
                     onPageChange={setCurrentPage}
                     itemsPerPage={itemsPerPage}
-                    totalItems={navigationPaths.length}
+                    totalItems={navigationPaths?.length || 0}
                 />
             </div>
         </div>

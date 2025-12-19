@@ -7,6 +7,8 @@ import type {
     TelemetryEventStats,
     PerformanceStats,
     SessionStats,
+    PageStats,
+    DeviceStats,
 } from '@/types/telemetry';
 
 /**
@@ -25,7 +27,7 @@ export async function getOverviewStats(
     const queryString = params.toString();
     const endpoint = `/api/telemetry/stats/overview${queryString ? `?${queryString}` : ''}`;
 
-    const response = await apiClient & lt; ApiResponse & lt; OverviewStats & gt;& gt; (endpoint, { token });
+    const response = await apiClient<ApiResponse<OverviewStats>>(endpoint, { token });
 
     if (!response.success || !response.data) {
         throw new Error(response.error || 'Failed to fetch overview stats');
@@ -38,7 +40,7 @@ export async function getGeoStats(
     token: string,
     startDate?: string,
     endDate?: string
-): Promise & lt; GeoStats & gt; {
+): Promise<GeoStats> {
     const params = new URLSearchParams();
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
@@ -46,7 +48,7 @@ export async function getGeoStats(
     const queryString = params.toString();
     const endpoint = `/api/telemetry/stats/geo${queryString ? `?${queryString}` : ''}`;
 
-    const response = await apiClient & lt; ApiResponse & lt; GeoStats & gt;& gt; (endpoint, { token });
+    const response = await apiClient<ApiResponse<GeoStats>>(endpoint, { token });
 
     if (!response.success || !response.data) {
         throw new Error(response.error || 'Failed to fetch geo stats');
@@ -61,7 +63,7 @@ export async function getErrorStats(
     endDate?: string,
     errorType?: string,
     severity?: string
-): Promise & lt; ErrorStats & gt; {
+): Promise<ErrorStats> {
     const params = new URLSearchParams();
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
@@ -71,7 +73,7 @@ export async function getErrorStats(
     const queryString = params.toString();
     const endpoint = `/api/telemetry/stats/errors${queryString ? `?${queryString}` : ''}`;
 
-    const response = await apiClient & lt; ApiResponse & lt; ErrorStats & gt;& gt; (endpoint, { token });
+    const response = await apiClient<ApiResponse<ErrorStats>>(endpoint, { token });
 
     if (!response.success || !response.data) {
         throw new Error(response.error || 'Failed to fetch error stats');
@@ -86,7 +88,7 @@ export async function getEventStats(
     endDate?: string,
     userId?: string,
     eventType?: string
-): Promise & lt; TelemetryEventStats & gt; {
+): Promise<TelemetryEventStats> {
     const params = new URLSearchParams();
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
@@ -96,7 +98,7 @@ export async function getEventStats(
     const queryString = params.toString();
     const endpoint = `/api/telemetry/stats/events${queryString ? `?${queryString}` : ''}`;
 
-    const response = await apiClient & lt; ApiResponse & lt; TelemetryEventStats & gt;& gt; (endpoint, { token });
+    const response = await apiClient<ApiResponse<TelemetryEventStats>>(endpoint, { token });
 
     if (!response.success || !response.data) {
         throw new Error(response.error || 'Failed to fetch event stats');
@@ -111,7 +113,7 @@ export async function getPerformanceStats(
     endDate?: string,
     endpoint?: string,
     statusCode?: number
-): Promise & lt; PerformanceStats & gt; {
+): Promise<PerformanceStats> {
     const params = new URLSearchParams();
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
@@ -121,7 +123,7 @@ export async function getPerformanceStats(
     const queryString = params.toString();
     const apiEndpoint = `/api/telemetry/stats/performance${queryString ? `?${queryString}` : ''}`;
 
-    const response = await apiClient & lt; ApiResponse & lt; PerformanceStats & gt;& gt; (apiEndpoint, { token });
+    const response = await apiClient<ApiResponse<PerformanceStats>>(apiEndpoint, { token });
 
     if (!response.success || !response.data) {
         throw new Error(response.error || 'Failed to fetch performance stats');
@@ -134,7 +136,7 @@ export async function getSessionStats(
     token: string,
     startDate?: string,
     endDate?: string
-): Promise & lt; SessionStats & gt; {
+): Promise<SessionStats> {
     const params = new URLSearchParams();
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
@@ -142,7 +144,7 @@ export async function getSessionStats(
     const queryString = params.toString();
     const endpoint = `/api/telemetry/stats/sessions${queryString ? `?${queryString}` : ''}`;
 
-    const response = await apiClient & lt; ApiResponse & lt; SessionStats & gt;& gt; (endpoint, { token });
+    const response = await apiClient<ApiResponse<SessionStats>>(endpoint, { token });
 
     if (!response.success || !response.data) {
         throw new Error(response.error || 'Failed to fetch session stats');
@@ -155,54 +157,104 @@ export async function getSessionStats(
  * Get page view statistics
  */
 export async function getPageStats(
-  token: string,
-  startDate?: string,
-  endDate?: string,
-  userId?: string,
-  path?: string
+    token: string,
+    startDate?: string,
+    endDate?: string,
+    userId?: string,
+    path?: string
 ): Promise<PageStats> {
-  const params = new URLSearchParams();
-  if (startDate) params.append('startDate', startDate);
-  if (endDate) params.append('endDate', endDate);
-  if (userId) params.append('userId', userId);
-  if (path) params.append('path', path);
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    if (userId) params.append('userId', userId);
+    if (path) params.append('path', path);
 
-  const queryString = params.toString();
-  const endpoint = `/api/telemetry/stats/pages${queryString ? `?${queryString}` : ''}`;
+    const queryString = params.toString();
+    const endpoint = `/api/telemetry/stats/pages${queryString ? `?${queryString}` : ''}`;
 
-  const response = await apiClient<ApiResponse<PageStats>>(endpoint, { token });
-  
-  if (!response.success || !response.data) {
-    throw new Error(response.error || 'Failed to fetch page stats');
-  }
+    const response = await apiClient<ApiResponse<PageStats>>(endpoint, { token });
 
-  return response.data;
+    if (!response.success || !response.data) {
+        throw new Error(response.error || 'Failed to fetch page stats');
+    }
+
+    return response.data;
 }
 
 /**
  * Get device statistics
  */
 export async function getDeviceStats(
-  token: string,
-  startDate?: string,
-  endDate?: string,
-  deviceType?: string,
-  os?: string
+    token: string,
+    startDate?: string,
+    endDate?: string,
+    deviceType?: string,
+    os?: string
 ): Promise<DeviceStats> {
-  const params = new URLSearchParams();
-  if (startDate) params.append('startDate', startDate);
-  if (endDate) params.append('endDate', endDate);
-  if (deviceType) params.append('deviceType', deviceType);
-  if (os) params.append('os', os);
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    if (deviceType) params.append('deviceType', deviceType);
+    if (os) params.append('os', os);
 
-  const queryString = params.toString();
-  const endpoint = `/api/telemetry/stats/devices${queryString ? `?${queryString}` : ''}`;
+    const queryString = params.toString();
+    const endpoint = `/api/telemetry/stats/devices${queryString ? `?${queryString}` : ''}`;
 
-  const response = await apiClient<ApiResponse<DeviceStats>>(endpoint, { token });
-  
-  if (!response.success || !response.data) {
-    throw new Error(response.error || 'Failed to fetch device stats');
-  }
+    const response = await apiClient<ApiResponse<DeviceStats>>(endpoint, { token });
 
-  return response.data;
+    if (!response.success || !response.data) {
+        throw new Error(response.error || 'Failed to fetch device stats');
+    }
+
+    return response.data;
+}
+
+/**
+ * Get navigation path analytics
+ */
+export async function getNavigationPaths(
+    token: string,
+    startDate?: string,
+    endDate?: string,
+    limit?: number
+): Promise<Array<{ path: string; users: number; conversions: number; rate: number }>> {
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    if (limit) params.append('limit', limit.toString());
+
+    const queryString = params.toString();
+    const endpoint = `/api/telemetry/stats/navigation-paths${queryString ? `?${queryString}` : ''}`;
+
+    const response = await apiClient<ApiResponse<Array<{ path: string; users: number; conversions: number; rate: number }>>>(endpoint, { token });
+
+    if (!response.success || !response.data) {
+        throw new Error(response.error || 'Failed to fetch navigation paths');
+    }
+
+    return response.data;
+}
+
+/**
+ * Get conversion funnel analytics
+ */
+export async function getConversionFunnel(
+    token: string,
+    startDate?: string,
+    endDate?: string
+): Promise<Array<{ step: string; users: number; dropoff: number }>> {
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+
+    const queryString = params.toString();
+    const endpoint = `/api/telemetry/stats/conversion-funnel${queryString ? `?${queryString}` : ''}`;
+
+    const response = await apiClient<ApiResponse<Array<{ step: string; users: number; dropoff: number }>>>(endpoint, { token });
+
+    if (!response.success || !response.data) {
+        throw new Error(response.error || 'Failed to fetch conversion funnel');
+    }
+
+    return response.data;
 }

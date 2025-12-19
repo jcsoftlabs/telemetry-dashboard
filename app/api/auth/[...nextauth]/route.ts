@@ -34,17 +34,26 @@ export const authOptions = {
                         throw new Error(data.error || 'Authentication failed');
                     }
 
+                    // Backend returns: { success: true, data: { user, token } } or { success: true, user, token }
+                    const userData = data.data?.user || data.user;
+                    const token = data.data?.token || data.token;
+
+                    if (!userData || !token) {
+                        console.error('Invalid backend response structure:', data);
+                        throw new Error('Invalid response from server');
+                    }
+
                     // Check if user is admin
-                    if (data.user.role !== 'ADMIN') {
+                    if (userData.role !== 'ADMIN') {
                         throw new Error('Access denied. Admin privileges required.');
                     }
 
                     return {
-                        id: data.user.id,
-                        email: data.user.email,
-                        role: data.user.role,
-                        token: data.token,
-                        name: `${data.user.firstName || ''} ${data.user.lastName || ''}`.trim() || data.user.email,
+                        id: userData.id,
+                        email: userData.email,
+                        role: userData.role,
+                        token: token,
+                        name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.email,
                     };
                 } catch (error: any) {
                     console.error('Auth error:', error);
