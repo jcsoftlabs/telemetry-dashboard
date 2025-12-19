@@ -107,11 +107,11 @@ export default function AnalyticsGeoPage() {
 
                 {loading && !geoData ? (
                     <div className="h-96 bg-gray-100 dark:bg-slate-700 animate-pulse rounded-lg"></div>
-                ) : geoData && geoData.byCountry.length > 0 ? (
-                    <WorldHeatmap data={geoData.byCountry} />
+                ) : geoData ? (
+                    <WorldHeatmap data={geoData.byCountry || []} />
                 ) : (
                     <div className="h-96 flex items-center justify-center text-gray-400 dark:text-gray-500">
-                        <p>Aucune donnée géographique disponible</p>
+                        <p>Erreur de chargement</p>
                     </div>
                 )}
             </div>
