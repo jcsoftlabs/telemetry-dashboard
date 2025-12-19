@@ -1,23 +1,21 @@
-'use client';
-
 import { useSession } from 'next-auth/react';
-import { getOverviewStats } from '@/lib/api/telemetry';
 import { usePolling } from './usePolling';
+import { getOverviewStats } from '@/lib/api/telemetry';
 import type { OverviewStats } from '@/types/telemetry';
 
-export function useTelemetryOverview(
-    startDate?: string,
-    endDate?: string,
-    pollingInterval: number = 5000
-) {
+/**
+ * Hook to fetch telemetry overview statistics with polling
+ */
+export function useTelemetryOverview(pollingInterval: number = 5000) {
     const { data: session } = useSession();
 
-    const fetchData = async () => {
+    const fetchData = async (): Promise<OverviewStats> => {
         if (!session?.accessToken) {
-            throw new Error('No access token available');
+            throw new Error('No authentication token available');
         }
-        return getOverviewStats(session.accessToken, startDate, endDate);
+
+        return await getOverviewStats(session.accessToken);
     };
 
-    return usePolling & lt; OverviewStats & gt; (fetchData, pollingInterval, !!session?.accessToken);
+    return usePolling<OverviewStats>(fetchData, pollingInterval, !!session?.accessToken);
 }
