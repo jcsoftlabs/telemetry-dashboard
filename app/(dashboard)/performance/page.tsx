@@ -115,8 +115,8 @@ export default function PerformancePage() {
                     </td>
                     <td className="py-3 px-4">
                       <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                        metric.statusCode &lt; 300 ? 'bg-green-100 text-green-800' :
-                        metric.statusCode &lt; 400 ? 'bg-yellow-100 text-yellow-800' :
+                        metric.statusCode < 300 ? 'bg-green-100 text-green-800' :
+                        metric.statusCode < 400 ? 'bg-yellow-100 text-yellow-800' :
                         'bg-red-100 text-red-800'
                       }`}>
                         {metric.statusCode}
