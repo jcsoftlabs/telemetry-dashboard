@@ -6,6 +6,7 @@ import { getGeoStats, getDeviceStats } from '@/lib/api/telemetry';
 import { usePolling } from '@/lib/hooks/usePolling';
 import KPICard from '@/components/charts/KPICard';
 import KPISkeleton from '@/components/skeletons/KPISkeleton';
+import WorldHeatmap from '@/components/charts/WorldHeatmap';
 import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
 
 const DEVICE_COLORS = {
@@ -95,6 +96,24 @@ export default function AnalyticsGeoPage() {
                         />
                     </>
                 ) : null}
+            </div>
+
+            {/* World Heatmap */}
+            <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-blue-100 dark:border-blue-900 p-6 transition-colors duration-200">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="w-1 h-8 bg-blue-600 dark:bg-blue-500 rounded-full"></div>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Carte Mondiale des Sessions</h3>
+                </div>
+
+                {loading && !geoData ? (
+                    <div className="h-96 bg-gray-100 dark:bg-slate-700 animate-pulse rounded-lg"></div>
+                ) : geoData && geoData.byCountry.length > 0 ? (
+                    <WorldHeatmap data={geoData.byCountry} />
+                ) : (
+                    <div className="h-96 flex items-center justify-center text-gray-400 dark:text-gray-500">
+                        <p>Aucune donnée géographique disponible</p>
+                    </div>
+                )}
             </div>
 
             {/* Device Stats - Pie Charts */}
