@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { ComposableMap, Geographies, Geography, ZoomableGroup } from 'react-simple-maps';
+import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 
 interface CountryData {
     country: string;
@@ -33,6 +34,8 @@ const COUNTRY_NAME_MAPPING: Record<string, string> = {
 };
 
 export default function WorldHeatmap({ data }: WorldHeatmapProps) {
+    const [position, setPosition] = useState({ coordinates: [0, 20], zoom: 1 });
+
     const { maxSessions, colorScale, countryDataMap } = useMemo(() => {
         const max = Math.max(...data.map(d => d.sessions), 1);
 
@@ -57,6 +60,18 @@ export default function WorldHeatmap({ data }: WorldHeatmapProps) {
     }, [data]);
 
     const activeCountries = data.filter(d => d.sessions > 0).length;
+
+    const handleZoomIn = () => {
+        setPosition(pos => ({ ...pos, zoom: Math.min(pos.zoom * 1.5, 8) }));
+    };
+
+    const handleZoomOut = () => {
+        setPosition(pos => ({ ...pos, zoom: Math.max(pos.zoom / 1.5, 1) }));
+    };
+
+    const handleReset = () => {
+        setPosition({ coordinates: [0, 20], zoom: 1 });
+    };
 
     return (
         <div className="relative w-full bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-950 rounded-xl p-4">
@@ -87,6 +102,32 @@ export default function WorldHeatmap({ data }: WorldHeatmapProps) {
                 </div>
             </div>
 
+            {/* Zoom Controls */}
+            <div className="absolute bottom-20 right-4 bg-white dark:bg-slate-800 rounded-lg shadow-lg z-10 border border-gray-200 dark:border-slate-700 flex flex-col gap-1 p-1">
+                <button
+                    onClick={handleZoomIn}
+                    className="p-2 hover:bg-blue-50 dark:hover:bg-slate-700 rounded transition-colors"
+                    title="Zoom avant"
+                >
+                    <ZoomIn className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                </button>
+                <button
+                    onClick={handleZoomOut}
+                    className="p-2 hover:bg-blue-50 dark:hover:bg-slate-700 rounded transition-colors"
+                    title="Zoom arrière"
+                >
+                    <ZoomOut className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                </button>
+                <div className="h-px bg-gray-200 dark:bg-slate-600 my-1"></div>
+                <button
+                    onClick={handleReset}
+                    className="p-2 hover:bg-blue-50 dark:hover:bg-slate-700 rounded transition-colors"
+                    title="Réinitialiser"
+                >
+                    <Maximize2 className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                </button>
+            </div>
+
             {/* Real World Map */}
             <div className="w-full" style={{ height: '500px' }}>
                 <ComposableMap
@@ -97,7 +138,11 @@ export default function WorldHeatmap({ data }: WorldHeatmapProps) {
                     }}
                     className="w-full h-full"
                 >
-                    <ZoomableGroup>
+                    <ZoomableGroup
+                        zoom={position.zoom}
+                        center={position.coordinates as [number, number]}
+                        onMoveEnd={setPosition}
+                    >
                         <Geographies geography={geoUrl}>
                             {({ geographies }) =>
                                 geographies.map((geo) => {
@@ -132,14 +177,14 @@ export default function WorldHeatmap({ data }: WorldHeatmapProps) {
                 </ComposableMap>
             </div>
 
-            {/* Stats at bottom */}
-            <div className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
-                🌍 {activeCountries} pays avec sessions • Max: {maxSessions.toLocaleString('fr-FR')} sessions
-                {data.length > 0 && (
-                    <span className="ml-2 text-xs">
-                        • Survol pour détails
-                    </span>
-                )}
+            {/* Stats and Instructions */}
+            <div className="mt-4 text-center">
+                <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                    🌍 {activeCountries} pays avec sessions • Max: {maxSessions.toLocaleString('fr-FR')} sessions
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-500">
+                    💡 Utilisez les boutons ou glissez pour zoomer • Cliquez et déplacez pour naviguer
+                </div>
             </div>
         </div>
     );
