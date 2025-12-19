@@ -18,7 +18,7 @@ const severityColors = {
 
 export default function ErrorsPage() {
     const { data: session } = useSession();
-    const [severityFilter, setSeverityFilter] = useState & lt; string > ('');
+    const [severityFilter, setSeverityFilter] = useState < string > ('');
 
     const { data, loading, error } = usePolling(
         async () => {
