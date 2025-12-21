@@ -46,6 +46,38 @@ const COUNTRY_NAME_MAPPING: Record<string, string> = {
     'Swaziland': 'eSwatini',
 };
 
+// Normalize string for comparison (remove accents, lowercase)
+const normalizeString = (str: string): string => {
+    return str
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+};
+
+// Intelligent country name matching with fallbacks
+const matchCountryName = (backendName: string, geoName: string): boolean => {
+    // Exact match
+    if (backendName === geoName) return true;
+
+    // Case-insensitive match
+    if (backendName.toLowerCase() === geoName.toLowerCase()) return true;
+
+    // Normalized match (without accents)
+    if (normalizeString(backendName) === normalizeString(geoName)) return true;
+
+    // Partial match (one contains the other)
+    const normBackend = normalizeString(backendName);
+    const normGeo = normalizeString(geoName);
+    if (normGeo.includes(normBackend) || normBackend.includes(normGeo)) {
+        // Only match if the length difference is small (avoid false positives)
+        const lengthDiff = Math.abs(normBackend.length - normGeo.length);
+        if (lengthDiff <= 5) return true;
+    }
+
+    return false;
+};
+
 export default function WorldHeatmap({ data }: WorldHeatmapProps) {
     const [position, setPosition] = useState({ coordinates: [0, 20], zoom: 1 });
 
@@ -62,11 +94,23 @@ export default function WorldHeatmap({ data }: WorldHeatmapProps) {
             return '#E5E7EB'; // Gray for no data
         };
 
-        // Create a map for quick lookup
+        // Create a map for quick lookup with intelligent matching
         const dataMap = new Map<string, CountryData>();
         data.forEach(item => {
-            const mappedName = COUNTRY_NAME_MAPPING[item.country] || item.country;
+            // Try explicit mapping first
+            let mappedName = COUNTRY_NAME_MAPPING[item.country];
+
+            // If no explicit mapping, the mapped name is the original
+            if (!mappedName) {
+                mappedName = item.country;
+            }
+
             dataMap.set(mappedName, item);
+
+            // Also add the original name as a key for fallback
+            if (mappedName !== item.country) {
+                dataMap.set(item.country, item);
+            }
         });
 
         return { maxSessions: max, colorScale: scale, countryDataMap: dataMap };
