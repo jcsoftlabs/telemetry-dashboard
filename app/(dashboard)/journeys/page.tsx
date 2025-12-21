@@ -65,7 +65,7 @@ export default function UserJourneysPage() {
     }, [sessionData]);
 
     return (
-        <div className="p-8 space-y-6 overflow-x-hidden">
+        <div className="space-y-6">
             {/* Header */}
             <div className="flex justify-between items-center">
                 <div>
