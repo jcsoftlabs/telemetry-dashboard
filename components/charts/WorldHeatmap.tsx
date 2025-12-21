@@ -19,8 +19,21 @@ const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
 // Map country names from backend to ISO country names in the GeoJSON
 const COUNTRY_NAME_MAPPING: Record<string, string> = {
+    // Haiti variations
+    'HT': 'Haiti',
+    'Haïti': 'Haiti',
+    'Haiti': 'Haiti',
+
+    // United States variations
     'United States': 'United States of America',
+    'US': 'United States of America',
+    'USA': 'United States of America',
+
+    // United Kingdom variations
     'United Kingdom': 'United Kingdom',
+    'UK': 'United Kingdom',
+
+    // Other countries
     'DR Congo': 'Dem. Rep. Congo',
     'Congo': 'Congo',
     'Central African Republic': 'Central African Rep.',
