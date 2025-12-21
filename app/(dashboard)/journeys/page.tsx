@@ -27,9 +27,9 @@ interface SessionData {
 }
 
 export default function UserJourneysPage() {
-    const { data, connected, reconnecting } = useWebSocket<{ data: SessionData }>('telemetry:sessions');
+    const { data, connected, reconnecting } = useWebSocket<SessionData>('telemetry:sessions');
 
-    const sessionData = data?.data;
+    const sessionData = data;
 
     // Calculate journey stats
     const journeyStats = useMemo(() => {
