@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { Activity, TrendingUp, Users, ArrowRight, MousePointer } from 'lucide-react';
-import { getSessionStats, getNavigationPaths, getConversionFunnel } from '@/lib/api/telemetry';
-import { usePolling } from '@/lib/hooks/usePolling';
+import { useTelemetrySessions } from '@/lib/hooks/useTelemetryWebSocket';
+import WebSocketStatus from '@/components/ui/WebSocketStatus';
 import KPICard from '@/components/charts/KPICard';
 import KPISkeleton from '@/components/skeletons/KPISkeleton';
 import Pagination from '@/components/common/Pagination';
@@ -13,47 +13,24 @@ export default function SessionsPage() {
     const { data: session } = useSession();
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
+    const { data: sessionData, error: sessionError, connected, reconnecting } = useTelemetrySessions();
 
-    // Fetch session stats (for KPIs)
-    const { data: sessionData, loading: sessionLoading, error: sessionError } = usePolling(
-        async () => {
-            if (!session?.accessToken) throw new Error('No token');
-            return getSessionStats(session.accessToken);
-        },
-        5000,
-        !!session?.accessToken
-    );
+    // For now, using same data for all sections (navigation paths and funnel will use session data)
+    const navigationPaths = sessionData?.navigationPaths || [];
+    const conversionFunnel = sessionData?.conversionFunnel || [];
+    const pathsError = null;
+    const funnelError = null;
 
-    // Fetch navigation paths
-    const { data: navigationPaths, loading: pathsLoading, error: pathsError } = usePolling(
-        async () => {
-            if (!session?.accessToken) throw new Error('No token');
-            return getNavigationPaths(session.accessToken, undefined, undefined, 20);
-        },
-        10000, // Refresh every 10s
-        !!session?.accessToken
-    );
-
-    // Fetch conversion funnel
-    const { data: conversionFunnel, loading: funnelLoading, error: funnelError } = usePolling(
-        async () => {
-            if (!session?.accessToken) throw new Error('No token');
-            return getConversionFunnel(session.accessToken);
-        },
-        10000, // Refresh every 10s
-        !!session?.accessToken
-    );
-
-    if (sessionError || pathsError || funnelError) {
+    if (sessionError) {
         return (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
                 <h3 className="text-red-900 dark:text-red-200 font-semibold mb-2">Erreur de chargement</h3>
-                <p className="text-red-700 dark:text-red-300">{sessionError?.message || pathsError?.message || funnelError?.message}</p>
+                <p className="text-red-700 dark:text-red-300">{sessionError.message}</p>
             </div>
         );
     }
 
-    const loading = sessionLoading || pathsLoading || funnelLoading;
+
 
     const totalPages = navigationPaths ? Math.ceil(navigationPaths.length / itemsPerPage) : 1;
     const paginatedPaths = navigationPaths ? navigationPaths.slice(
@@ -69,13 +46,16 @@ export default function SessionsPage() {
     return (
         <div className="space-y-8">
             <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Chemins de Navigation</h1>
+                <div className="flex items-center justify-between mb-2">
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Chemins de Navigation</h1>
+                    <WebSocketStatus connected={connected} reconnecting={reconnecting} />
+                </div>
                 <p className="text-gray-600 dark:text-gray-400">Analyse des parcours utilisateurs et tunnel de conversion</p>
             </div>
 
             {/* KPIs */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                {loading && !sessionData ? (
+                {!sessionData ? (
                     <>
                         <KPISkeleton />
                         <KPISkeleton />
@@ -123,7 +103,7 @@ export default function SessionsPage() {
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white">Tunnel de Conversion</h3>
                 </div>
 
-                {loading && !conversionFunnel ? (
+                {!conversionFunnel ? (
                     <div className="space-y-4">
                         {[...Array(6)].map((_, i) => (
                             <div key={i} className="h-20 bg-gray-100 dark:bg-slate-700 animate-pulse rounded-lg"></div>

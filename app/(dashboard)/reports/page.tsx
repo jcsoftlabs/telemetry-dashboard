@@ -78,11 +78,20 @@ export default function ReportsPage() {
                     break;
             }
 
+            if (!data) {
+                alert('Aucune donnée disponible pour cette période');
+                return;
+            }
+
+            // Convert data to array format for export
+            const exportData = Array.isArray(data) ? data : [data];
+
             // Export in selected format
             if (format === 'csv') {
-                exportToCSV(data, filename);
+                exportToCSV(exportData, filename);
             } else {
-                exportToPDF(data, filename);
+                const title = reportTemplates.find(t => t.id === selectedReport)?.name || 'Rapport';
+                exportToPDF(title, exportData, filename);
             }
         } catch (error) {
             console.error('Erreur génération rapport:', error);
@@ -147,8 +156,8 @@ export default function ReportsPage() {
                                 key={template.id}
                                 onClick={() => setSelectedReport(template.id)}
                                 className={`p-6 rounded-xl border-2 transition-all duration-200 text-left ${isSelected
-                                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-lg scale-105'
-                                        : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md'
+                                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-lg scale-105'
+                                    : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md'
                                     }`}
                             >
                                 <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-4 ${`bg-${template.color}-100 dark:bg-${template.color}-900/20`

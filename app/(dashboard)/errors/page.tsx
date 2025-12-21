@@ -2,8 +2,8 @@
 
 import { useSession } from 'next-auth/react';
 import { AlertTriangle, XCircle, AlertOctagon } from 'lucide-react';
-import { getErrorStats } from '@/lib/api/telemetry';
-import { usePolling } from '@/lib/hooks/usePolling';
+import { useTelemetryErrors } from '@/lib/hooks/useTelemetryWebSocket';
+import WebSocketStatus from '@/components/ui/WebSocketStatus';
 import KPICard from '@/components/charts/KPICard';
 import KPISkeleton from '@/components/skeletons/KPISkeleton';
 import { useState } from 'react';
@@ -18,16 +18,8 @@ const severityColors = {
 
 export default function ErrorsPage() {
     const { data: session } = useSession();
-    const [severityFilter, setSeverityFilter] = useState < string > ('');
-
-    const { data, loading, error } = usePolling(
-        async () => {
-            if (!session?.accessToken) throw new Error('No token');
-            return getErrorStats(session.accessToken, undefined, undefined, undefined, severityFilter || undefined);
-        },
-        5000,
-        !!session?.accessToken
-    );
+    const [severityFilter, setSeverityFilter] = useState<string>('');
+    const { data, error, connected, reconnecting } = useTelemetryErrors();
 
     if (error) {
         return (
@@ -45,13 +37,16 @@ export default function ErrorsPage() {
     return (
         <div className="space-y-8">
             <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Erreurs & Crash Reports</h1>
+                <div className="flex items-center justify-between mb-2">
+                    <h1 className="text-3xl font-bold text-gray-900">Erreurs & Crash Reports</h1>
+                    <WebSocketStatus connected={connected} reconnecting={reconnecting} />
+                </div>
                 <p className="text-gray-600">Monitoring des erreurs frontend et backend</p>
             </div>
 
             {/* KPIs */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                {loading && !data ? (
+                {!data ? (
                     <>
                         <KPISkeleton />
                         <KPISkeleton />
@@ -125,31 +120,31 @@ export default function ErrorsPage() {
                     <h3 className="text-lg font-bold text-gray-900">Erreurs par Type</h3>
                 </div>
 
-                {loading && !data ? (
+                {!data ? (
                     <div className="space-y-3">
                         {[...Array(5)].map((_, i) => (
                             <div key={i} className="h-16 bg-gray-100 animate-pulse rounded"></div>
                         ))}
                     </div>
                 ) : data && data.byType.length > 0 ? (
-                <div className="space-y-3">
-                    {data.byType.map((errorType, index) => (
-                        <div key={index} className="p-4 bg-red-50 rounded-lg border border-red-100">
-                            <div className="flex justify-between items-center">
-                                <div>
-                                    <div className="font-semibold text-gray-900">{errorType.errorType}</div>
-                                    <div className="text-sm text-gray-600">{errorType.count} occurrences</div>
+                    <div className="space-y-3">
+                        {data.byType.map((errorType, index) => (
+                            <div key={index} className="p-4 bg-red-50 rounded-lg border border-red-100">
+                                <div className="flex justify-between items-center">
+                                    <div>
+                                        <div className="font-semibold text-gray-900">{errorType.errorType}</div>
+                                        <div className="text-sm text-gray-600">{errorType.count} occurrences</div>
+                                    </div>
+                                    <div className="text-2xl font-bold text-red-600">{errorType.count}</div>
                                 </div>
-                                <div className="text-2xl font-bold text-red-600">{errorType.count}</div>
                             </div>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
                 ) : (
-                <div className="text-center py-12 text-gray-400">
-                    <p>Aucune erreur détectée</p>
-                </div>
-        )}
+                    <div className="text-center py-12 text-gray-400">
+                        <p>Aucune erreur détectée</p>
+                    </div>
+                )}
             </div>
 
             {/* Error Stats by Severity */}
@@ -159,22 +154,22 @@ export default function ErrorsPage() {
                     <h3 className="text-lg font-bold text-gray-900">Distribution par Sévérité</h3>
                 </div>
 
-                {loading && !data ? (
+                {!data ? (
                     <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                         {[...Array(5)].map((_, i) => (
                             <div key={i} className="h-24 bg-gray-100 animate-pulse rounded"></div>
                         ))}
                     </div>
                 ) : data && data.bySeverity.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                    {data.bySeverity.map((sev, index) => (
-                        <div key={index} className={`p-4 rounded-lg ${severityColors[sev.severity as keyof typeof severityColors]}`}>
-                            <div className="text-xs font-semibold uppercase opacity-80 mb-2">{sev.severity}</div>
-                            <div className="text-3xl font-bold">{sev.count}</div>
-                        </div>
-                    ))}
-                </div>
-        ) : null}
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                        {data.bySeverity.map((sev, index) => (
+                            <div key={index} className={`p-4 rounded-lg ${severityColors[sev.severity as keyof typeof severityColors]}`}>
+                                <div className="text-xs font-semibold uppercase opacity-80 mb-2">{sev.severity}</div>
+                                <div className="text-3xl font-bold">{sev.count}</div>
+                            </div>
+                        ))}
+                    </div>
+                ) : null}
             </div>
         </div>
     );

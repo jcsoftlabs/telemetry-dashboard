@@ -10,17 +10,23 @@ import {
     Users,
     FileText,
     LogOut,
-    Globe
+    Globe,
+    TrendingUpIcon,
+    User
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 
 const navigation = [
     { name: 'Tableau de bord', href: '/', icon: LayoutDashboard },
     { name: 'Analytics Géo', href: '/analytics-geo', icon: Globe },
+    { name: 'Parcours', href: '/journeys', icon: Users },
+    { name: 'Engagement', href: '/engagement', icon: TrendingUp },
+    { name: 'Plateformes', href: '/platforms', icon: TrendingUp },
     { name: 'Événements', href: '/events', icon: Activity },
     { name: 'Performance', href: '/performance', icon: TrendingUp },
     { name: 'Erreurs', href: '/errors', icon: AlertTriangle },
     { name: 'Sessions', href: '/sessions', icon: Users },
+    { name: 'Profils Utilisateurs', href: '/users', icon: User },
     { name: 'Rapports', href: '/reports', icon: FileText },
 ];
 

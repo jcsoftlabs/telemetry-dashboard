@@ -1,12 +1,12 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { Globe, MapPin, Smartphone, Monitor, Tablet } from 'lucide-react';
-import { getGeoStats, getDeviceStats } from '@/lib/api/telemetry';
-import { usePolling } from '@/lib/hooks/usePolling';
+import { Globe, MapPin, Smartphone, Monitor } from 'lucide-react';
+import { useTelemetryGeo, useTelemetryDevices } from '@/lib/hooks/useTelemetryWebSocket';
 import KPICard from '@/components/charts/KPICard';
 import KPISkeleton from '@/components/skeletons/KPISkeleton';
 import WorldHeatmap from '@/components/charts/WorldHeatmap';
+import WebSocketStatus from '@/components/ui/WebSocketStatus';
 import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
 
 const DEVICE_COLORS = {
@@ -19,23 +19,12 @@ const DEVICE_COLORS = {
 export default function AnalyticsGeoPage() {
     const { data: session } = useSession();
 
-    const { data: geoData, loading: geoLoading, error: geoError } = usePolling(
-        async () => {
-            if (!session?.accessToken) throw new Error('No token');
-            return getGeoStats(session.accessToken);
-        },
-        5000,
-        !!session?.accessToken
-    );
+    const { data: geoData, error: geoError, connected: geoConnected, reconnecting: geoReconnecting } = useTelemetryGeo();
+    const { data: deviceData, error: deviceError, connected: deviceConnected } = useTelemetryDevices();
 
-    const { data: deviceData, loading: deviceLoading, error: deviceError } = usePolling(
-        async () => {
-            if (!session?.accessToken) throw new Error('No token');
-            return getDeviceStats(session.accessToken);
-        },
-        5000,
-        !!session?.accessToken
-    );
+    // Overall connection status (connected if at least one is connected)
+    const connected = geoConnected || deviceConnected;
+    const reconnecting = geoReconnecting;
 
     if (geoError || deviceError) {
         return (
@@ -46,18 +35,19 @@ export default function AnalyticsGeoPage() {
         );
     }
 
-    const loading = geoLoading || deviceLoading;
-
     return (
         <div className="space-y-8">
             <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Analytics Géographiques & Appareils</h1>
+                <div className="flex items-center justify-between mb-2">
+                    <h1 className="text-3xl font-bold text-gray-900">Analytics Géographiques & Appareils</h1>
+                    <WebSocketStatus connected={connected} reconnecting={reconnecting} />
+                </div>
                 <p className="text-gray-600">Analyse de la distribution géographique et des appareils utilisés</p>
             </div>
 
             {/* KPIs */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                {loading && !geoData ? (
+                {!geoData ? (
                     <>
                         <KPISkeleton />
                         <KPISkeleton />
@@ -105,7 +95,7 @@ export default function AnalyticsGeoPage() {
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white">Carte Mondiale des Sessions</h3>
                 </div>
 
-                {loading && !geoData ? (
+                {!geoData ? (
                     <div className="h-96 bg-gray-100 dark:bg-slate-700 animate-pulse rounded-lg"></div>
                 ) : geoData ? (
                     <WorldHeatmap data={geoData.byCountry || []} />
@@ -125,7 +115,7 @@ export default function AnalyticsGeoPage() {
                         <h3 className="text-lg font-bold text-gray-900">Par Type d&apos;Appareil</h3>
                     </div>
 
-                    {loading && !deviceData ? (
+                    {!deviceData ? (
                         <div className="h-64 bg-gray-100 animate-pulse rounded-lg"></div>
                     ) : deviceData && deviceData.byDeviceType.length > 0 ? (
                         <ResponsiveContainer width="100%" height={300}>
@@ -138,7 +128,7 @@ export default function AnalyticsGeoPage() {
                                     paddingAngle={5}
                                     dataKey="count"
                                     nameKey="deviceType"
-                                    label={(entry) => `${entry.deviceType}: ${entry.percentage}%`}
+                                    label
                                 >
                                     {deviceData.byDeviceType.map((entry, index) => (
                                         <Cell
@@ -165,7 +155,7 @@ export default function AnalyticsGeoPage() {
                         <h3 className="text-lg font-bold text-gray-900">Par Système d&apos;Exploitation</h3>
                     </div>
 
-                    {loading && !deviceData ? (
+                    {!deviceData ? (
                         <div className="space-y-2">
                             {[...Array(5)].map((_, i) => (
                                 <div key={i} className="h-10 bg-gray-100 animate-pulse rounded"></div>
@@ -198,7 +188,7 @@ export default function AnalyticsGeoPage() {
                     <h3 className="text-lg font-bold text-gray-900">Sessions par Pays</h3>
                 </div>
 
-                {loading && !geoData ? (
+                {!geoData ? (
                     <div className="space-y-2">
                         {[...Array(10)].map((_, i) => (
                             <div key={i} className="h-12 bg-gray-100 animate-pulse rounded"></div>
@@ -253,7 +243,7 @@ export default function AnalyticsGeoPage() {
                     <h3 className="text-lg font-bold text-gray-900">Top 20 Villes</h3>
                 </div>
 
-                {loading && !geoData ? (
+                {!geoData ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {[...Array(20)].map((_, i) => (
                             <div key={i} className="h-10 bg-gray-100 animate-pulse rounded"></div>

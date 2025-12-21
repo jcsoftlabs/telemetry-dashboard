@@ -46,6 +46,17 @@ export interface SessionStats {
     country: string;
     count: number;
   }>;
+  navigationPaths?: Array<{
+    path: string;
+    users: number;
+    conversions: number;
+    rate: number;
+  }>;
+  conversionFunnel?: Array<{
+    step: string;
+    users: number;
+    dropoff: number;
+  }>;
 }
 
 export interface OverviewStats {

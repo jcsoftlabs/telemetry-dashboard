@@ -13,9 +13,11 @@ interface HeaderProps {
 
 export default function Header({ onExportCSV, onExportPDF }: HeaderProps) {
     const [currentTime, setCurrentTime] = useState(new Date());
+    const [mounted, setMounted] = useState(false);
     const { theme, toggleTheme } = useTheme();
 
     useEffect(() => {
+        setMounted(true);
         const timer = setInterval(() => {
             setCurrentTime(new Date());
         }, 1000);
@@ -52,10 +54,10 @@ export default function Header({ onExportCSV, onExportPDF }: HeaderProps) {
                 {/* Date & Time */}
                 <div className="text-right">
                     <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                        {format(currentTime, 'EEEE dd MMMM yyyy', { locale: fr })}
+                        {mounted ? format(currentTime, 'EEEE dd MMMM yyyy', { locale: fr }) : '—'}
                     </div>
                     <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                        {format(currentTime, 'HH:mm:ss')}
+                        {mounted ? format(currentTime, 'HH:mm:ss') : '—:—:—'}
                     </div>
                 </div>
 

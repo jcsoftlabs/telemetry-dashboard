@@ -3,7 +3,8 @@
 import { Activity, Clock, AlertTriangle, Users } from 'lucide-react';
 import KPICard from '@/components/charts/KPICard';
 import KPISkeleton from '@/components/skeletons/KPISkeleton';
-import { useTelemetryOverview } from '@/lib/hooks/useTelemetryData';
+import { useTelemetryOverview } from '@/lib/hooks/useTelemetryWebSocket';
+import WebSocketStatus from '@/components/ui/WebSocketStatus';
 import {
     BarChart,
     Bar,
@@ -27,7 +28,7 @@ const SEVERITY_COLORS = {
 };
 
 export default function OverviewPage() {
-    const { data, loading, error } = useTelemetryOverview();
+    const { data, error, connected, reconnecting } = useTelemetryOverview();
 
     if (error) {
         return (
@@ -42,7 +43,10 @@ export default function OverviewPage() {
         <div className="space-y-8">
             {/* Page Title */}
             <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Tableau de Bord Analytique</h1>
+                <div className="flex items-center justify-between mb-2">
+                    <h1 className="text-3xl font-bold text-gray-900">Tableau de Bord Analytique</h1>
+                    <WebSocketStatus connected={connected} reconnecting={reconnecting} />
+                </div>
                 <p className="text-gray-600">
                     Surveillance en temps réel du secteur touristique • Mise à jour : {data?.timestamp ? new Date(data.timestamp).toLocaleString('fr-FR') : '--'}
                 </p>
@@ -50,7 +54,7 @@ export default function OverviewPage() {
 
             {/* KPIs */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {loading && !data ? (
+                {!data ? (
                     <>
                         <KPISkeleton />
                         <KPISkeleton />
@@ -100,23 +104,23 @@ export default function OverviewPage() {
                         <h3 className="text-lg font-bold text-gray-900">Événements par Type</h3>
                     </div>
 
-                    {loading && !data ? (
+                    {!data ? (
                         <div className="h-64 bg-gray-100 animate-pulse rounded-lg"></div>
                     ) : data && data.events.byType.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={data.events.byType}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                            <XAxis dataKey="eventType" stroke="#6B7280" />
-                            <YAxis stroke="#6B7280" />
-                            <Tooltip />
-                            <Bar dataKey="count" fill="#3B82F6" radius={[8, 8, 0, 0]} />
-                        </BarChart>
-                    </ResponsiveContainer>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <BarChart data={data.events.byType}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                                <XAxis dataKey="eventType" stroke="#6B7280" />
+                                <YAxis stroke="#6B7280" />
+                                <Tooltip />
+                                <Bar dataKey="count" fill="#3B82F6" radius={[8, 8, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
                     ) : (
-                    <div className="h-64 flex items-center justify-center text-gray-400">
-                        <p>Aucune donnée disponible pour la période</p>
-                    </div>
-          )}
+                        <div className="h-64 flex items-center justify-center text-gray-400">
+                            <p>Aucune donnée disponible pour la période</p>
+                        </div>
+                    )}
                 </div>
 
                 {/* Errors by Severity - Donut Chart */}
@@ -126,37 +130,37 @@ export default function OverviewPage() {
                         <h3 className="text-lg font-bold text-gray-900">Erreurs par Sévérité</h3>
                     </div>
 
-                    {loading && !data ? (
+                    {!data ? (
                         <div className="h-64 bg-gray-100 animate-pulse rounded-lg"></div>
                     ) : data && data.errors.bySeverity.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                            <Pie
-                                data={data.errors.bySeverity}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={60}
-                                outerRadius={100}
-                                paddingAngle={5}
-                                dataKey="count"
-                                nameKey="severity"
-                            >
-                                {data.errors.bySeverity.map((entry, index) => (
-                                    <Cell
-                                        key={`cell-${index}`}
-                                        fill={SEVERITY_COLORS[entry.severity as keyof typeof SEVERITY_COLORS] || '#6B7280'}
-                                    />
-                                ))}
-                            </Pie>
-                            <Tooltip />
-                            <Legend />
-                        </PieChart>
-                    </ResponsiveContainer>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <PieChart>
+                                <Pie
+                                    data={data.errors.bySeverity}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={60}
+                                    outerRadius={100}
+                                    paddingAngle={5}
+                                    dataKey="count"
+                                    nameKey="severity"
+                                >
+                                    {data.errors.bySeverity.map((entry, index) => (
+                                        <Cell
+                                            key={`cell-${index}`}
+                                            fill={SEVERITY_COLORS[entry.severity as keyof typeof SEVERITY_COLORS] || '#6B7280'}
+                                        />
+                                    ))}
+                                </Pie>
+                                <Tooltip />
+                                <Legend />
+                            </PieChart>
+                        </ResponsiveContainer>
                     ) : (
-                    <div className="h-64 flex items-center justify-center text-gray-400">
-                        <p>Aucune erreur détectée</p>
-                    </div>
-          )}
+                        <div className="h-64 flex items-center justify-center text-gray-400">
+                            <p>Aucune erreur détectée</p>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -169,7 +173,7 @@ export default function OverviewPage() {
                         <h3 className="text-lg font-bold text-gray-900">Aperçu Performance</h3>
                     </div>
 
-                    {loading && !data ? (
+                    {!data ? (
                         <div className="space-y-3">
                             <div className="h-12 bg-gray-100 animate-pulse rounded"></div>
                             <div className="h-12 bg-gray-100 animate-pulse rounded"></div>
@@ -212,29 +216,29 @@ export default function OverviewPage() {
                         <h3 className="text-lg font-bold text-gray-900">Sessions par Pays</h3>
                     </div>
 
-                    {loading && !data ? (
+                    {!data ? (
                         <div className="space-y-3">
                             {[...Array(5)].map((_, i) => (
                                 <div key={i} className="h-12 bg-gray-100 animate-pulse rounded"></div>
                             ))}
                         </div>
                     ) : data && data.sessions.topCountries.length > 0 ? (
-                    <div className="space-y-2">
-                        {data.sessions.topCountries.slice(0, 10).map((country, index) => (
-                            <div key={index} className="flex justify-between items-center p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
-                                <div className="flex items-center gap-3">
-                                    <span className="text-sm font-bold text-purple-600 w-6">#{index + 1}</span>
-                                    <span className="text-sm font-medium text-gray-900">{country.country || 'Inconnu'}</span>
+                        <div className="space-y-2">
+                            {data.sessions.topCountries.slice(0, 10).map((country, index) => (
+                                <div key={index} className="flex justify-between items-center p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-sm font-bold text-purple-600 w-6">#{index + 1}</span>
+                                        <span className="text-sm font-medium text-gray-900">{country.country || 'Inconnu'}</span>
+                                    </div>
+                                    <span className="text-sm font-bold text-gray-900">{country.count}</span>
                                 </div>
-                                <span className="text-sm font-bold text-gray-900">{country.count}</span>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
                     ) : (
-                    <div className="h-40 flex items-center justify-center text-gray-400">
-                        <p>Données géographiques en attente</p>
-                    </div>
-          )}
+                        <div className="h-40 flex items-center justify-center text-gray-400">
+                            <p>Données géographiques en attente</p>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

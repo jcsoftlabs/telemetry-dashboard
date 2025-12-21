@@ -1,82 +1,128 @@
-// Utility functions for exporting data
+'use client';
+
+import Papa from 'papaparse';
 
 /**
- * Export data to CSV format
+ * Export data to CSV format using papaparse
  */
 export function exportToCSV(data: any[], filename: string) {
-    if (!data || data.length === 0) {
-        alert('No data to export');
-        return;
+    try {
+        if (!data || data.length === 0) {
+            alert('Aucune donnée à exporter');
+            return;
+        }
+
+        // Convert to CSV using papaparse
+        const csv = Papa.unparse(data);
+
+        // Create blob and download
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+
+        link.setAttribute('href', url);
+        link.setAttribute('download', `${filename}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        console.log(`✅ CSV exported: ${filename}.csv`);
+    } catch (error) {
+        console.error('❌ Error exporting CSV:', error);
+        alert('Erreur lors de l\'export CSV');
     }
-
-    // Get headers from first object
-    const headers = Object.keys(data[0]);
-
-    // Create CSV content
-    const csvContent = [
-        headers.join(','),
-        ...data.map(row =>
-            headers.map(header => {
-                const value = row[header];
-                // Escape commas and quotes
-                if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
-                    return `"${value.replace(/"/g, '""')}"`;
-                }
-                return value;
-            }).join(',')
-        )
-    ].join('\n');
-
-    // Create blob and download
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-
-    link.setAttribute('href', url);
-    link.setAttribute('download', `${filename}.csv`);
-    link.style.visibility = 'hidden';
-
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
 }
 
 /**
- * Export data to PDF format using jsPDF
+ * Export data to PDF format with Ministry header
  */
 export async function exportToPDF(title: string, data: any[], filename: string) {
-    // Dynamic import to reduce bundle size
-    const { jsPDF } = await import('jspdf');
-    const autoTable = (await import('jspdf-autotable')).default;
+    try {
+        if (!data || data.length === 0) {
+            alert('Aucune donnée à exporter');
+            return;
+        }
 
-    if (!data || data.length === 0) {
-        alert('No data to export');
-        return;
+        // Dynamic imports
+        const { jsPDF } = await import('jspdf');
+        const autoTable = (await import('jspdf-autotable')).default;
+
+        const doc = new jsPDF();
+
+        // Add Ministry header
+        doc.setFontSize(18);
+        doc.setTextColor(40, 40, 40);
+        doc.text('RÉPUBLIQUE D\'HAÏTI', 105, 15, { align: 'center' });
+
+        doc.setFontSize(14);
+        doc.text('Ministère du Tourisme', 105, 22, { align: 'center' });
+
+        doc.setFontSize(12);
+        doc.setTextColor(100, 100, 100);
+        doc.text('Plateforme de Surveillance', 105, 28, { align: 'center' });
+
+        // Add title
+        doc.setFontSize(16);
+        doc.setTextColor(0, 0, 0);
+        doc.text(title, 105, 40, { align: 'center' });
+
+        // Add generation date
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        const date = new Date().toLocaleDateString('fr-FR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        doc.text(`Généré le ${date}`, 105, 46, { align: 'center' });
+
+        // Prepare table data
+        const headers = Object.keys(data[0]);
+        const rows = data.map(item => headers.map(header => item[header]));
+
+        // Add table using autoTable
+        (doc as any).autoTable({
+            head: [headers],
+            body: rows,
+            startY: 55,
+            theme: 'striped',
+            headStyles: {
+                fillColor: [41, 128, 185], // Blue
+                textColor: 255,
+                fontStyle: 'bold'
+            },
+            styles: {
+                fontSize: 9,
+                cellPadding: 3
+            },
+            alternateRowStyles: {
+                fillColor: [245, 245, 245]
+            }
+        });
+
+        // Add footer with page numbers
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setTextColor(150, 150, 150);
+            doc.text(
+                `Page ${i} sur ${pageCount}`,
+                105,
+                doc.internal.pageSize.height - 10,
+                { align: 'center' }
+            );
+        }
+
+        // Save PDF
+        doc.save(`${filename}.pdf`);
+
+        console.log(`✅ PDF exported: ${filename}.pdf`);
+    } catch (error) {
+        console.error('❌ Error exporting PDF:', error);
+        alert('Erreur lors de l\'export PDF');
     }
-
-    const doc = new jsPDF();
-
-    // Add title
-    doc.setFontSize(18);
-    doc.text(title, 14, 20);
-
-    // Add date
-    doc.setFontSize(10);
-    doc.text(`Generated: ${new Date().toLocaleString('fr-FR')}`, 14, 28);
-
-    // Get headers and rows
-    const headers = Object.keys(data[0]);
-    const rows = data.map(row => headers.map(header => row[header]));
-
-    // Add table
-    (doc as any).autoTable({
-        head: [headers],
-        body: rows,
-        startY: 35,
-        styles: { fontSize: 8 },
-        headStyles: { fillColor: [59, 130, 246] }, // Blue
-    });
-
-    // Save
-    doc.save(`${filename}.pdf`);
 }
