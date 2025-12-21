@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Search, Eye } from 'lucide-react';
+import { User, Search, Eye, Download, FileText } from 'lucide-react';
 import axios from 'axios';
 import { useSession } from 'next-auth/react';
+import { exportToCSV, exportToPDF } from '@/lib/utils/export';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://discover-ht-production.up.railway.app';
 
@@ -91,6 +92,67 @@ export default function UsersListPage() {
         router.push(`/user/${userId}`);
     };
 
+    const handleExport = async (format: 'csv' | 'pdf') => {
+        try {
+            const token = (session as any)?.accessToken;
+            if (!token) {
+                alert('Non authentifié');
+                return;
+            }
+
+            // Fetch detailed user data
+            const detailedUsers = await Promise.all(
+                filteredUsers.map(async (user) => {
+                    try {
+                        const [profileRes, devicesRes, locationsRes] = await Promise.all([
+                            axios.get(`${API_URL}/api/telemetry/user/${user.id}/profile`, { headers: { Authorization: `Bearer ${token}` } }),
+                            axios.get(`${API_URL}/api/telemetry/user/${user.id}/devices`, { headers: { Authorization: `Bearer ${token}` } }),
+                            axios.get(`${API_URL}/api/telemetry/user/${user.id}/locations?limit=1`, { headers: { Authorization: `Bearer ${token}` } })
+                        ]);
+
+                        const profile = profileRes.data.data;
+                        const devices = devicesRes.data.data;
+                        const locations = locationsRes.data.data;
+
+                        return {
+                            'Nom Complet': `${user.firstName} ${user.lastName}`,
+                            'Email': user.email,
+                            'Rôle': user.role === 'ADMIN' ? 'Administrateur' : 'Utilisateur',
+                            'Date Inscription': new Date(user.createdAt).toLocaleDateString('fr-FR'),
+                            'Dernière Connexion': profile.lastLogin ? new Date(profile.lastLogin).toLocaleDateString('fr-FR') : 'Jamais',
+                            'Pays': profile.country || 'Non spécifié',
+                            'Total Sessions': profile.stats?.totalSessions || 0,
+                            'Total Pages Vues': profile.stats?.totalPageviews || 0,
+                            'Total Événements': profile.stats?.totalEvents || 0,
+                            'Appareils Utilisés': devices.total || 0,
+                            'Dernière Localisation': locations.lastKnown ? `${locations.lastKnown.city || 'Inconnu'}, ${locations.lastKnown.country || 'Inconnu'}` : 'Non disponible'
+                        };
+                    } catch (error) {
+                        console.error(`Error fetching data for user ${user.id}:`, error);
+                        return {
+                            'Nom Complet': `${user.firstName} ${user.lastName}`,
+                            'Email': user.email,
+                            'Rôle': user.role === 'ADMIN' ? 'Administrateur' : 'Utilisateur',
+                            'Date Inscription': new Date(user.createdAt).toLocaleDateString('fr-FR'),
+                            'Erreur': 'Données non disponibles'
+                        };
+                    }
+                })
+            );
+
+            const filename = `utilisateurs_${new Date().toISOString().split('T')[0]}`;
+
+            if (format === 'csv') {
+                exportToCSV(detailedUsers, filename);
+            } else {
+                exportToPDF('Liste des Utilisateurs', detailedUsers, filename);
+            }
+        } catch (error) {
+            console.error('Export error:', error);
+            alert('Erreur lors de l\'export');
+        }
+    };
+
     if (loading) {
         return (
             <div className="p-8 space-y-6">
@@ -135,6 +197,22 @@ export default function UsersListPage() {
                     <p className="text-gray-600 dark:text-gray-400 mt-1">
                         Liste des utilisateurs avec accès aux analytics
                     </p>
+                </div>
+                <div className="flex gap-3">
+                    <button
+                        onClick={() => handleExport('csv')}
+                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                        <FileText className="w-4 h-4" />
+                        Exporter CSV
+                    </button>
+                    <button
+                        onClick={() => handleExport('pdf')}
+                        className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                        <Download className="w-4 h-4" />
+                        Exporter PDF
+                    </button>
                 </div>
             </div>
 
