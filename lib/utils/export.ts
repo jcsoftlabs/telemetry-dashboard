@@ -46,7 +46,9 @@ export async function exportToPDF(title: string, data: any[], filename: string) 
 
         // Dynamic imports
         const { jsPDF } = await import('jspdf');
-        const autoTable = (await import('jspdf-autotable')).default;
+
+        // Import autoTable - this extends jsPDF prototype
+        await import('jspdf-autotable');
 
         const doc = new jsPDF();
 
