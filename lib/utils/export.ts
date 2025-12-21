@@ -81,60 +81,57 @@ export async function exportToPDF(title: string, data: any[], filename: string) 
         });
         doc.text(`Généré le ${date}`, 105, 46, { align: 'center' });
 
-        // Flatten complex data structures for table display
-        const flattenData = (obj: any, prefix = ''): any => {
-            const flattened: any = {};
+        // Convert complex data to simple key-value pairs for table display
+        const convertToTableData = (obj: any, parentKey = ''): Array<{ key: string, value: string }> => {
+            const result: Array<{ key: string, value: string }> = [];
+
+            const formatValue = (val: any): string => {
+                if (val === null || val === undefined) return 'N/A';
+                if (typeof val === 'boolean') return val ? 'Oui' : 'Non';
+                if (typeof val === 'number') return val.toFixed(2);
+                if (val instanceof Date) return val.toLocaleDateString('fr-FR');
+                if (Array.isArray(val)) {
+                    if (val.length === 0) return 'Aucun';
+                    if (typeof val[0] === 'object') return `${val.length} éléments`;
+                    return val.slice(0, 3).join(', ') + (val.length > 3 ? '...' : '');
+                }
+                if (typeof val === 'object') return JSON.stringify(val);
+                return String(val);
+            };
 
             for (const key in obj) {
-                const value = obj[key];
-                const newKey = prefix ? `${prefix}.${key}` : key;
+                if (!obj.hasOwnProperty(key)) continue;
 
-                if (value === null || value === undefined) {
-                    flattened[newKey] = 'N/A';
-                } else if (Array.isArray(value)) {
-                    // For arrays, just show count or first few items
-                    if (value.length === 0) {
-                        flattened[newKey] = '0 éléments';
-                    } else if (typeof value[0] === 'object') {
-                        flattened[newKey] = `${value.length} éléments`;
-                    } else {
-                        flattened[newKey] = value.slice(0, 3).join(', ');
-                    }
-                } else if (typeof value === 'object' && !(value instanceof Date)) {
-                    // Recursively flatten nested objects
-                    Object.assign(flattened, flattenData(value, newKey));
+                const value = obj[key];
+                const fullKey = parentKey ? `${parentKey}.${key}` : key;
+
+                if (value && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
+                    // Recursively process nested objects
+                    const nested = convertToTableData(value, fullKey);
+                    result.push(...nested);
                 } else {
-                    flattened[newKey] = value;
+                    // Add as key-value pair
+                    result.push({
+                        key: fullKey,
+                        value: formatValue(value)
+                    });
                 }
             }
 
-            return flattened;
+            return result;
         };
 
-        // Convert data to flat array
-        let tableData: any[];
-        if (Array.isArray(data)) {
-            tableData = data.map(item => flattenData(item));
-        } else {
-            // Single object - convert to array with one item
-            tableData = [flattenData(data)];
-        }
+        // Convert data to table format
+        const tableData = convertToTableData(data);
 
-        if (tableData.length === 0 || Object.keys(tableData[0]).length === 0) {
+        if (tableData.length === 0) {
             alert('Aucune donnée à afficher dans le rapport');
             return;
         }
 
-        // Prepare table data
-        const headers = Object.keys(tableData[0]);
-        const rows = tableData.map(item => headers.map(header => {
-            const value = item[header];
-            // Format values for display
-            if (typeof value === 'number') {
-                return value.toFixed(2);
-            }
-            return String(value);
-        }));
+        // Prepare table data with two columns: Métrique and Valeur
+        const headers = ['Métrique', 'Valeur'];
+        const rows = tableData.map(item => [item.key, item.value]);
 
         // Add table using autoTable
         (doc as any).autoTable({
