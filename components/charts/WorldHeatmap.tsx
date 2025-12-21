@@ -204,7 +204,20 @@ export default function WorldHeatmap({ data }: WorldHeatmapProps) {
                             {({ geographies }) =>
                                 geographies.map((geo) => {
                                     const countryName = geo.properties.name;
-                                    const countryData = countryDataMap.get(countryName);
+
+                                    // Try direct lookup first
+                                    let countryData = countryDataMap.get(countryName);
+
+                                    // If not found, try intelligent matching
+                                    if (!countryData) {
+                                        for (const [key, value] of countryDataMap.entries()) {
+                                            if (matchCountryName(key, countryName)) {
+                                                countryData = value;
+                                                break;
+                                            }
+                                        }
+                                    }
+
                                     const sessions = countryData?.sessions || 0;
                                     const fillColor = colorScale(sessions);
 
