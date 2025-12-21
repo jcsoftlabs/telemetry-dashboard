@@ -79,9 +79,60 @@ export async function exportToPDF(title: string, data: any[], filename: string) 
         });
         doc.text(`Généré le ${date}`, 105, 46, { align: 'center' });
 
+        // Flatten complex data structures for table display
+        const flattenData = (obj: any, prefix = ''): any => {
+            const flattened: any = {};
+
+            for (const key in obj) {
+                const value = obj[key];
+                const newKey = prefix ? `${prefix}.${key}` : key;
+
+                if (value === null || value === undefined) {
+                    flattened[newKey] = 'N/A';
+                } else if (Array.isArray(value)) {
+                    // For arrays, just show count or first few items
+                    if (value.length === 0) {
+                        flattened[newKey] = '0 éléments';
+                    } else if (typeof value[0] === 'object') {
+                        flattened[newKey] = `${value.length} éléments`;
+                    } else {
+                        flattened[newKey] = value.slice(0, 3).join(', ');
+                    }
+                } else if (typeof value === 'object' && !(value instanceof Date)) {
+                    // Recursively flatten nested objects
+                    Object.assign(flattened, flattenData(value, newKey));
+                } else {
+                    flattened[newKey] = value;
+                }
+            }
+
+            return flattened;
+        };
+
+        // Convert data to flat array
+        let tableData: any[];
+        if (Array.isArray(data)) {
+            tableData = data.map(item => flattenData(item));
+        } else {
+            // Single object - convert to array with one item
+            tableData = [flattenData(data)];
+        }
+
+        if (tableData.length === 0 || Object.keys(tableData[0]).length === 0) {
+            alert('Aucune donnée à afficher dans le rapport');
+            return;
+        }
+
         // Prepare table data
-        const headers = Object.keys(data[0]);
-        const rows = data.map(item => headers.map(header => item[header]));
+        const headers = Object.keys(tableData[0]);
+        const rows = tableData.map(item => headers.map(header => {
+            const value = item[header];
+            // Format values for display
+            if (typeof value === 'number') {
+                return value.toFixed(2);
+            }
+            return String(value);
+        }));
 
         // Add table using autoTable
         (doc as any).autoTable({
