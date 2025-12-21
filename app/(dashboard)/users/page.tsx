@@ -159,8 +159,10 @@ export default function UsersListPage() {
                             locationText = profile.country;
                         }
 
-                        // Format last login
+                        // Format last login with multiple fallbacks
                         let lastLogin = 'Aucune connexion enregistrée';
+
+                        // Try profile.lastLogin first
                         if (profile.lastLogin) {
                             const loginDate = new Date(profile.lastLogin);
                             lastLogin = loginDate.toLocaleDateString('fr-FR', {
@@ -170,6 +172,31 @@ export default function UsersListPage() {
                                 hour: '2-digit',
                                 minute: '2-digit'
                             });
+                        }
+                        // Fallback: use most recent location timestamp
+                        else if (locations.lastKnown?.timestamp) {
+                            const loginDate = new Date(locations.lastKnown.timestamp);
+                            lastLogin = loginDate.toLocaleDateString('fr-FR', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            }) + ' (estimé)';
+                        }
+                        // Final fallback: use user creation date if recent
+                        else {
+                            const createdDate = new Date(user.createdAt);
+                            const daysSinceCreation = (Date.now() - createdDate.getTime()) / (1000 * 60 * 60 * 24);
+                            if (daysSinceCreation < 1) {
+                                lastLogin = createdDate.toLocaleDateString('fr-FR', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                }) + ' (inscription)';
+                            }
                         }
 
                         return {
