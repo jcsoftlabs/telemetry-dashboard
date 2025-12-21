@@ -283,34 +283,46 @@ export default function UserProfilePage() {
                         <div>
                             <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Par Type</h4>
                             <div className="space-y-2">
-                                {devices.byDeviceType.map((device, index) => (
-                                    <div key={index} className="flex justify-between items-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                                        <span className="text-sm font-medium text-gray-900 dark:text-white">{device.deviceType}</span>
-                                        <span className="text-sm font-bold text-red-600">{device.percentage}%</span>
-                                    </div>
-                                ))}
+                                {devices.byDeviceType && devices.byDeviceType.length > 0 ? (
+                                    devices.byDeviceType.map((device, index) => (
+                                        <div key={index} className="flex justify-between items-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                                            <span className="text-sm font-medium text-gray-900 dark:text-white">{device.deviceType}</span>
+                                            <span className="text-sm font-bold text-red-600">{device.percentage}%</span>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">Aucune donnée disponible</p>
+                                )}
                             </div>
                         </div>
                         <div>
                             <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Par OS</h4>
                             <div className="space-y-2">
-                                {devices.byOS.map((os, index) => (
-                                    <div key={index} className="flex justify-between items-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                                        <span className="text-sm font-medium text-gray-900 dark:text-white">{os.os}</span>
-                                        <span className="text-sm font-bold text-red-600">{os.percentage}%</span>
-                                    </div>
-                                ))}
+                                {devices.byOS && devices.byOS.length > 0 ? (
+                                    devices.byOS.map((os, index) => (
+                                        <div key={index} className="flex justify-between items-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                                            <span className="text-sm font-medium text-gray-900 dark:text-white">{os.os}</span>
+                                            <span className="text-sm font-bold text-red-600">{os.percentage}%</span>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">Aucune donnée disponible</p>
+                                )}
                             </div>
                         </div>
                         <div>
                             <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Par Navigateur</h4>
                             <div className="space-y-2">
-                                {devices.byBrowser.map((browser, index) => (
-                                    <div key={index} className="flex justify-between items-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                                        <span className="text-sm font-medium text-gray-900 dark:text-white">{browser.browser}</span>
-                                        <span className="text-sm font-bold text-red-600">{browser.percentage}%</span>
-                                    </div>
-                                ))}
+                                {devices.byBrowser && devices.byBrowser.length > 0 ? (
+                                    devices.byBrowser.map((browser, index) => (
+                                        <div key={index} className="flex justify-between items-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                                            <span className="text-sm font-medium text-gray-900 dark:text-white">{browser.browser}</span>
+                                            <span className="text-sm font-bold text-red-600">{browser.percentage}%</span>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">Aucune donnée disponible</p>
+                                )}
                             </div>
                         </div>
                     </div>
