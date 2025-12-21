@@ -1,17 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FileDown, FileSpreadsheet, Bell, Moon, Sun } from 'lucide-react';
+import { Bell, Moon, Sun } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useTheme } from '@/lib/context/ThemeContext';
 
-interface HeaderProps {
-    onExportCSV?: () => void;
-    onExportPDF?: () => void;
-}
-
-export default function Header({ onExportCSV, onExportPDF }: HeaderProps) {
+export default function Header() {
     const [currentTime, setCurrentTime] = useState(new Date());
     const [mounted, setMounted] = useState(false);
     const { theme, toggleTheme } = useTheme();
@@ -24,22 +19,6 @@ export default function Header({ onExportCSV, onExportPDF }: HeaderProps) {
 
         return () => clearInterval(timer);
     }, []);
-
-    const handleExportCSV = () => {
-        if (onExportCSV) {
-            onExportCSV();
-        } else {
-            alert('Export CSV sera disponible sur cette page bientôt');
-        }
-    };
-
-    const handleExportPDF = () => {
-        if (onExportPDF) {
-            onExportPDF();
-        } else {
-            alert('Export PDF sera disponible sur cette page bientôt');
-        }
-    };
 
     return (
         <header className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-8 py-4 flex items-center justify-between transition-colors duration-200">
@@ -59,24 +38,6 @@ export default function Header({ onExportCSV, onExportPDF }: HeaderProps) {
                     <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
                         {mounted ? format(currentTime, 'HH:mm:ss') : '—:—:—'}
                     </div>
-                </div>
-
-                {/* Export Buttons */}
-                <div className="flex gap-2">
-                    <button
-                        onClick={handleExportCSV}
-                        className="p-2 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white rounded-lg transition-all duration-200 flex items-center gap-2 px-4 py-2 text-sm font-medium transform hover:scale-105 active:scale-95"
-                    >
-                        <FileSpreadsheet className="w-4 h-4" />
-                        Exporter CSV
-                    </button>
-                    <button
-                        onClick={handleExportPDF}
-                        className="p-2 bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600 text-white rounded-lg transition-all duration-200 flex items-center gap-2 px-4 py-2 text-sm font-medium transform hover:scale-105 active:scale-95"
-                    >
-                        <FileDown className="w-4 h-4" />
-                        Exporter PDF
-                    </button>
                 </div>
 
                 {/* Notification Icon */}
