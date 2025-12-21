@@ -44,13 +44,11 @@ export async function exportToPDF(title: string, data: any[], filename: string) 
             return;
         }
 
-        // Dynamic imports
-        const { jsPDF } = await import('jspdf');
+        // Import jsPDF dynamically
+        const jsPDF = (await import('jspdf')).jsPDF;
+        // jspdf-autotable is now statically imported at the top of the file, extending jsPDF prototype
 
-        // Import autoTable - this extends jsPDF prototype
-        await import('jspdf-autotable');
-
-        const doc = new jsPDF();
+        const doc = new jsPDF() as any;
 
         // Add Ministry header
         doc.setFontSize(18);
@@ -133,8 +131,11 @@ export async function exportToPDF(title: string, data: any[], filename: string) 
         const headers = ['Métrique', 'Valeur'];
         const rows = tableData.map(item => [item.key, item.value]);
 
-        // Add table using autoTable
-        (doc as any).autoTable({
+        // Import autoTable function separately
+        const autoTable = (await import('jspdf-autotable')).default;
+
+        // Add table using autoTable function
+        autoTable(doc, {
             head: [headers],
             body: rows,
             startY: 55,
