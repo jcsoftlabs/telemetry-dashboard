@@ -125,7 +125,9 @@ export default function UsersListPage() {
                             'Total Pages Vues': profile.stats?.totalPageviews || 0,
                             'Total Événements': profile.stats?.totalEvents || 0,
                             'Appareils Utilisés': devices.total || 0,
-                            'Dernière Localisation': locations.lastKnown ? `${locations.lastKnown.city || 'Inconnu'}, ${locations.lastKnown.country || 'Inconnu'}` : 'Non disponible'
+                            'Dernière Localisation': locations.lastKnown
+                                ? `${locations.lastKnown.city || 'Ville inconnue'}, ${locations.lastKnown.country || 'Pays inconnu'}`
+                                : 'Non disponible'
                         };
                     } catch (error) {
                         console.error(`Error fetching data for user ${user.id}:`, error);
