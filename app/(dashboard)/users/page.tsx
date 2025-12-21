@@ -100,6 +100,23 @@ export default function UsersListPage() {
                 return;
             }
 
+            // Helper function for reverse geocoding
+            const reverseGeocode = async (lat: number, lon: number): Promise<{ city: string, country: string }> => {
+                try {
+                    const response = await fetch(
+                        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&accept-language=fr`
+                    );
+                    const data = await response.json();
+                    return {
+                        city: data.address?.city || data.address?.town || data.address?.village || 'Ville inconnue',
+                        country: data.address?.country || 'Pays inconnu'
+                    };
+                } catch (error) {
+                    console.error('Reverse geocoding error:', error);
+                    return { city: 'Ville inconnue', country: 'Pays inconnu' };
+                }
+            };
+
             // Fetch detailed user data
             const detailedUsers = await Promise.all(
                 filteredUsers.map(async (user) => {
@@ -107,27 +124,70 @@ export default function UsersListPage() {
                         const [profileRes, devicesRes, locationsRes] = await Promise.all([
                             axios.get(`${API_URL}/api/telemetry/user/${user.id}/profile`, { headers: { Authorization: `Bearer ${token}` } }),
                             axios.get(`${API_URL}/api/telemetry/user/${user.id}/devices`, { headers: { Authorization: `Bearer ${token}` } }),
-                            axios.get(`${API_URL}/api/telemetry/user/${user.id}/locations?limit=1`, { headers: { Authorization: `Bearer ${token}` } })
+                            axios.get(`${API_URL}/api/telemetry/user/${user.id}/locations?limit=5`, { headers: { Authorization: `Bearer ${token}` } })
                         ]);
 
                         const profile = profileRes.data.data;
                         const devices = devicesRes.data.data;
                         const locations = locationsRes.data.data;
 
+                        // Determine location with multiple fallbacks
+                        let locationText = 'Non disponible';
+
+                        if (locations.lastKnown) {
+                            // Try to get location from lastKnown
+                            if (locations.lastKnown.city && locations.lastKnown.country) {
+                                locationText = `${locations.lastKnown.city}, ${locations.lastKnown.country}`;
+                            }
+                            // If no city/country but has coordinates, do reverse geocoding
+                            else if (locations.lastKnown.latitude && locations.lastKnown.longitude) {
+                                const geocoded = await reverseGeocode(
+                                    locations.lastKnown.latitude,
+                                    locations.lastKnown.longitude
+                                );
+                                locationText = `${geocoded.city}, ${geocoded.country}`;
+                            }
+                        }
+
+                        // Fallback to profile location
+                        if (locationText === 'Non disponible' && profile.lastLocation) {
+                            locationText = `${profile.lastLocation.city || 'Ville inconnue'}, ${profile.lastLocation.country || 'Pays inconnu'}`;
+                        }
+
+                        // Final fallback to profile country
+                        if (locationText === 'Non disponible' && profile.country) {
+                            locationText = profile.country;
+                        }
+
+                        // Format last login
+                        let lastLogin = 'Aucune connexion enregistrée';
+                        if (profile.lastLogin) {
+                            const loginDate = new Date(profile.lastLogin);
+                            lastLogin = loginDate.toLocaleDateString('fr-FR', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                        }
+
                         return {
                             'Nom Complet': `${user.firstName} ${user.lastName}`,
                             'Email': user.email,
                             'Rôle': user.role === 'ADMIN' ? 'Administrateur' : 'Utilisateur',
-                            'Date Inscription': new Date(user.createdAt).toLocaleDateString('fr-FR'),
-                            'Dernière Connexion': profile.lastLogin ? new Date(profile.lastLogin).toLocaleDateString('fr-FR') : 'Jamais',
+                            'Date Inscription': new Date(user.createdAt).toLocaleDateString('fr-FR', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                            }),
+                            'Dernière Connexion': lastLogin,
                             'Pays': profile.country || 'Non spécifié',
                             'Total Sessions': profile.stats?.totalSessions || 0,
                             'Total Pages Vues': profile.stats?.totalPageviews || 0,
                             'Total Événements': profile.stats?.totalEvents || 0,
                             'Appareils Utilisés': devices.total || 0,
-                            'Dernière Localisation': locations.lastKnown
-                                ? `${locations.lastKnown.city || 'Ville inconnue'}, ${locations.lastKnown.country || 'Pays inconnu'}`
-                                : 'Non disponible'
+                            'Dernière Localisation': locationText
                         };
                     } catch (error) {
                         console.error(`Error fetching data for user ${user.id}:`, error);
