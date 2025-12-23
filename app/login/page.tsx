@@ -81,7 +81,7 @@ export default function LoginPage() {
                     </div>
 
                     <div className="text-sm text-gray-400">
-                        © 2024 Ministry of Tourism Haiti. All rights reserved.<br />
+                        © 2025 Ministry of Tourism Haiti. All rights reserved.<br />
                         System Version 2.4.0
                     </div>
                 </div>
