@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 // Date de livraison prévue - MODIFIE CETTE DATE
-const DELIVERY_DATE = new Date('2026-01-31T00:00:00');
+// MAINTENANCE MODE DISABLED - Date set to past
+const DELIVERY_DATE = new Date('2020-01-01T00:00:00');
 
 // Clé secrète pour accès développeur (optionnel)
 const DEVELOPER_ACCESS_KEY = 'dev_access_2026'; // Change cette clé
