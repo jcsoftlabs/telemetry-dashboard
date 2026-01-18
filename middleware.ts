@@ -10,6 +10,7 @@ const DEVELOPER_ACCESS_KEY = 'dev_access_2026'; // Change cette clé
 
 export function middleware(request: NextRequest) {
     const now = new Date();
+    const pathname = request.nextUrl.pathname;
 
     // Vérifier si la date de livraison est passée
     if (now >= DELIVERY_DATE) {
@@ -17,8 +18,15 @@ export function middleware(request: NextRequest) {
         return NextResponse.next();
     }
 
-    // Vérifier si c'est déjà la page de maintenance
-    if (request.nextUrl.pathname === '/maintenance') {
+    // Toujours autoriser l'accès à ces routes (même en mode maintenance)
+    const allowedPaths = [
+        '/maintenance',
+        '/login',
+        '/api/auth',  // NextAuth routes
+    ];
+
+    // Vérifier si le chemin actuel est dans les chemins autorisés
+    if (allowedPaths.some(path => pathname.startsWith(path))) {
         return NextResponse.next();
     }
 
